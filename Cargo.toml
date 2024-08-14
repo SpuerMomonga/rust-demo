@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/plugin", "crates/shop"]
+resolver = "2"
+
+[workspace.dependencies]
+
+plugin = { path = "crates/plugin" }
+shop = { path = "crates/shop" }
