@@ -6,6 +6,8 @@ pub struct Plugin {
     pub initialize: Box<Activate>,
 }
 
+pub trait PluginManager {}
+
 fn main() {
     unsafe {
         let lib = libloading::Library::new("../../../target/release/shop.dll").unwrap();

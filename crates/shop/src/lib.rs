@@ -1,3 +1,6 @@
+use std::thread::sleep;
+use std::time::Duration;
+
 type Activate = dyn FnMut(i32, i32) -> Option<i32> + Send;
 
 // #[repr(C)]
@@ -39,6 +42,7 @@ impl Builder {
 
 #[no_mangle]
 pub fn init() -> Plugin {
+    sleep(Duration::from_secs(30));
     Builder::new("shop.kit-shop")
         .initialize(|a, b| Some((a + b) / 2))
         .build()
