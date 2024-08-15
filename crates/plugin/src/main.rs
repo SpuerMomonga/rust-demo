@@ -1,7 +1,15 @@
+type Activate = dyn FnMut(i32, i32) -> Option<i32> + Send;
+
+// #[repr(C)]
+pub struct Plugin {
+    pub name: &'static str,
+    pub initialize: Box<Activate>,
+}
+
 fn main() {
-  unsafe {
-    let lib = libloading::Library::new("../../../target/release/shop.dll").unwrap();
-    let func: libloading::Symbol<unsafe extern fn(a: i32, b: i32) -> i32> = lib.get(b"sum").unwrap();
-    print!("{}", func(3,4))
-  }
+    unsafe {
+        let lib = libloading::Library::new("../../../target/release/shop.dll").unwrap();
+        let init: libloading::Symbol<unsafe extern "C" fn() -> Plugin> = lib.get(b"init").unwrap();
+        print!("{:?}", (init().initialize)(4, 4));
+    }
 }
