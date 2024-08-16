@@ -1,0 +1,5 @@
+[package]
+name = "child-process"
+version = "0.0.0"
+authors = ["SpuerMomonga"]
+edition = "2021"
