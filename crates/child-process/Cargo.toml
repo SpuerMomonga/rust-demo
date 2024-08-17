@@ -3,3 +3,7 @@ name = "child-process"
 version = "0.0.0"
 authors = ["SpuerMomonga"]
 edition = "2021"
+
+[dependencies]
+log.workspace = true
+env_logger.workspace = true

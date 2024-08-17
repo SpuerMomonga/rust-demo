@@ -8,6 +8,8 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
+env_logger = "0.11"
+log = "0.4"
 
 plugin = { path = "crates/plugin" }
 shop = { path = "crates/shop" }
