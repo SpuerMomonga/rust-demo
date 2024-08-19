@@ -1,8 +1,8 @@
-use std::io::{self, stdout};
+use std::io::{self, stdout, Write};
 
 use crossterm::event::{read, Event::Key, KeyCode::Char};
 use crossterm::event::{Event, KeyEvent, KeyModifiers};
-use crossterm::terminal::{Clear, ClearType};
+use crossterm::style::Print;
 use crossterm::{execute, terminal};
 
 #[derive(Default)]
@@ -29,7 +29,9 @@ impl Editor {
 
     /// 清空屏幕
     fn clear_screen() -> Result<(), io::Error> {
-        execute!(stdout(), Clear(ClearType::All))
+        let mut stdout = stdout();
+        execute!(stdout, Print("\x1B[2J\x1B[3J\x1B[H"))?;
+        stdout.flush()
     }
 
     fn repl(&mut self) -> Result<(), io::Error> {
@@ -42,6 +44,10 @@ impl Editor {
             }
         }
         Ok(())
+    }
+
+    fn draw_rows(&mut self) {
+        todo!()
     }
 
     fn evaluate_event(&mut self, event: &Event) {
