@@ -1,0 +1,8 @@
+[package]
+name = "text-editor"
+version = "0.0.0"
+authors = ["SpuerMomonga"]
+edition = "2021"
+
+[dependencies]
+crossterm = "0.28"
