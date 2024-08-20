@@ -1,10 +1,14 @@
-use std::io::{self, stdout, Error, Write};
+use std::{
+    fmt::Display,
+    io::{stdout, Error, Write},
+};
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
     queue,
     style::Print,
     terminal::{self, Clear, ClearType},
+    Command,
 };
 
 #[derive(Clone, Copy)]
@@ -19,15 +23,15 @@ impl Size {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Position {
-    pub x: u16,
-    pub y: u16,
+    pub col: usize,
+    pub row: usize,
 }
 
 impl Position {
-    pub fn new(x: u16, y: u16) -> Self {
-        Self { x, y }
+    pub fn new(col: usize, row: usize) -> Self {
+        Self { col, row }
     }
 }
 
@@ -37,7 +41,6 @@ impl Terminal {
     pub fn initialize() -> Result<(), Error> {
         terminal::enable_raw_mode()?;
         Self::clear_screen()?;
-        Self::move_cursor_to(Position::new(0, 0))?;
         Self::execute()
     }
 
@@ -45,36 +48,41 @@ impl Terminal {
         terminal::disable_raw_mode()
     }
 
-    pub fn move_cursor_to(position: Position) -> Result<(), Error> {
-        queue!(io::stdout(), MoveTo(position.x, position.y))
+    pub fn move_caret_to(position: Position) -> Result<(), Error> {
+        Self::queue_command(MoveTo(position.col as u16, position.row as u16))
     }
 
     /// 清空屏幕
     pub fn clear_screen() -> Result<(), Error> {
-        queue!(stdout(), Print("\x1B[2J\x1B[3J\x1B[H"))
+        Self::queue_command(Print("\x1B[2J\x1B[3J\x1B[H"))
     }
 
     pub fn clear_line() -> Result<(), Error> {
-        queue!(stdout(), Clear(ClearType::CurrentLine))
+        Self::queue_command(Clear(ClearType::CurrentLine))
     }
 
-    pub fn hide_cursor() -> Result<(), Error> {
-        queue!(stdout(), Hide)
+    pub fn hide_caret() -> Result<(), Error> {
+        Self::queue_command(Hide)
     }
 
-    pub fn show_cursor() -> Result<(), Error> {
-        queue!(stdout(), Show)
+    pub fn show_caret() -> Result<(), Error> {
+        Self::queue_command(Show)
     }
 
-    pub fn print(string: &str) -> Result<(), Error> {
-        queue!(stdout(), Print(string))
+    pub fn print<T: Display>(string: T) -> Result<(), Error> {
+        Self::queue_command(Print(string))
     }
 
-    pub fn size() -> Result<(u16, u16), Error> {
-        terminal::size()
+    pub fn size() -> Result<Size, Error> {
+        let (width, height) = terminal::size()?;
+        Ok(Size::new(height, width))
     }
 
     pub fn execute() -> Result<(), Error> {
         stdout().flush()
+    }
+
+    fn queue_command<T: Command>(command: T) -> Result<(), Error> {
+        queue!(stdout(), command)
     }
 }
