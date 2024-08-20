@@ -1,53 +1,45 @@
-use std::io::{self, stdout, Write};
+use std::io::Error;
 
 use crossterm::event::{read, Event::Key, KeyCode::Char};
 use crossterm::event::{Event, KeyEvent, KeyModifiers};
-use crossterm::style::Print;
-use crossterm::{execute, terminal};
+use terminal::{Position, Terminal};
+
+mod terminal;
 
 #[derive(Default)]
 pub struct Editor {
-    shoul_quit: bool,
+    should_quit: bool,
 }
 
 impl Editor {
     pub fn run(&mut self) {
-        Self::initialize().unwrap();
+        Terminal::initialize().unwrap();
         let result = self.repl();
-        Self::terminate().unwrap();
+        Terminal::terminate().unwrap();
         result.unwrap();
     }
 
-    fn initialize() -> Result<(), io::Error> {
-        terminal::enable_raw_mode()?;
-        Self::clear_screen()
-    }
-
-    fn terminate() -> Result<(), std::io::Error> {
-        terminal::disable_raw_mode()
-    }
-
-    /// 清空屏幕
-    fn clear_screen() -> Result<(), io::Error> {
-        let mut stdout = stdout();
-        execute!(stdout, Print("\x1B[2J\x1B[3J\x1B[H"))?;
-        stdout.flush()
-    }
-
-    fn repl(&mut self) -> Result<(), io::Error> {
+    fn repl(&mut self) -> Result<(), Error> {
         loop {
-            let event = read()?;
-            self.evaluate_event(&event);
             self.refresh_screen()?;
-            if self.shoul_quit {
+            if self.should_quit {
                 break;
             }
+            let event = read()?;
+            self.evaluate_event(&event);
         }
         Ok(())
     }
 
-    fn draw_rows(&mut self) {
-        todo!()
+    fn draw_rows(&mut self) -> Result<(), Error> {
+        let height = Terminal::size()?.1;
+        for current_row in 0..height {
+            print!("~");
+            if current_row + 1 < height {
+                print!("\r\n");
+            }
+        }
+        Ok(())
     }
 
     fn evaluate_event(&mut self, event: &Event) {
@@ -57,14 +49,17 @@ impl Editor {
             ..
         }) = event
         {
-            self.shoul_quit = true;
+            self.should_quit = true;
         }
     }
 
-    fn refresh_screen(&self) -> Result<(), io::Error> {
-        if self.shoul_quit {
-            Self::clear_screen()?;
+    fn refresh_screen(&mut self) -> Result<(), Error> {
+        if self.should_quit {
+            Terminal::clear_screen()?;
             print!("Goodbye.\r\n");
+        } else {
+            self.draw_rows()?;
+            Terminal::move_cursor_to(Position::new(0, 0))?;
         }
         Ok(())
     }
