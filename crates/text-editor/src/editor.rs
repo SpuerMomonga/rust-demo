@@ -1,15 +1,13 @@
-use std::cmp;
 use std::io::Error;
+use std::{cmp, env};
 
-use crossterm::event::{read, Event::Key, KeyCode};
-use crossterm::event::{Event, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{read, Event, KeyCode};
+use crossterm::event::{KeyEvent, KeyEventKind, KeyModifiers};
 use terminal::{Position, Size, Terminal};
+use view::View;
 
 mod terminal;
-
-const NAME: &str = env!("CARGO_PKG_NAME");
-
-const VERSION: &str = env!("CARGO_PKG_VERSION");
+mod view;
 
 #[derive(Clone, Copy, Default)]
 pub struct Location {
@@ -27,14 +25,23 @@ impl Location {
 pub struct Editor {
     should_quit: bool,
     location: Location,
+    view: View,
 }
 
 impl Editor {
     pub fn run(&mut self) {
         Terminal::initialize().unwrap();
+        self.handle_args();
         let result = self.repl();
         Terminal::terminate().unwrap();
         result.unwrap();
+    }
+
+    fn handle_args(&mut self) {
+        let args: Vec<String> = env::args().collect();
+        if let Some(arg) = args.get(1) {
+            self.view.load(arg);
+        }
     }
 
     fn repl(&mut self) -> Result<(), Error> {
@@ -44,23 +51,7 @@ impl Editor {
                 break;
             }
             let event = read()?;
-            self.evaluate_event(&event)?;
-        }
-        Ok(())
-    }
-
-    fn draw_rows() -> Result<(), Error> {
-        let Size { height, .. } = Terminal::size()?;
-        for current_row in 0..height {
-            Terminal::clear_line()?;
-            if current_row == height / 2 {
-                Self::draw_welcome_message()?;
-            } else {
-                Self::draw_empty_row()?;
-            }
-            if current_row + 1 < height {
-                Terminal::print("\r\n")?;
-            }
+            self.evaluate_event(event)?;
         }
         Ok(())
     }
@@ -99,60 +90,51 @@ impl Editor {
         Ok(())
     }
 
-    fn evaluate_event(&mut self, event: &Event) -> Result<(), Error> {
-        if let Key(KeyEvent {
-            code,
-            modifiers,
-            kind: KeyEventKind::Press,
-            ..
-        }) = event
-        {
-            match code {
-                KeyCode::Char('q') if *modifiers == KeyModifiers::ALT => {
+    fn evaluate_event(&mut self, event: Event) -> Result<(), Error> {
+        match event {
+            Event::Key(KeyEvent {
+                code,
+                kind: KeyEventKind::Press,
+                modifiers,
+                ..
+            }) => match (code, modifiers) {
+                (KeyCode::Char('q'), KeyModifiers::ALT) => {
                     self.should_quit = true;
                 }
-                KeyCode::Up
-                | KeyCode::Down
-                | KeyCode::Left
-                | KeyCode::Right
-                | KeyCode::PageDown
-                | KeyCode::PageUp
-                | KeyCode::End
-                | KeyCode::Home => {
-                    self.move_point(*code)?;
+                (
+                    KeyCode::Up
+                    | KeyCode::Down
+                    | KeyCode::Left
+                    | KeyCode::Right
+                    | KeyCode::PageDown
+                    | KeyCode::PageUp
+                    | KeyCode::End
+                    | KeyCode::Home,
+                    _,
+                ) => {
+                    self.move_point(code);
                 }
-                _ => (),
+                _ => {}
+            },
+            Event::Resize(width, height) => {
+                self.view.resize(Size::new(height as usize, width as usize))
             }
+            _ => (),
         }
         Ok(())
     }
 
-    fn refresh_screen(&self) -> Result<(), Error> {
+    fn refresh_screen(&mut self) -> Result<(), Error> {
         Terminal::hide_caret()?;
         Terminal::move_caret_to(Position::default())?;
         if self.should_quit {
             Terminal::clear_screen()?;
             Terminal::print("Goodbye.\r\n")?;
         } else {
-            Self::draw_rows()?;
+            self.view.render()?;
             Terminal::move_caret_to(Position::new(self.location.x, self.location.y))?;
         }
         Terminal::show_caret()?;
         Terminal::execute()
-    }
-
-    fn draw_welcome_message() -> Result<(), Error> {
-        let mut welcome_message = format!("{NAME} editor -- version {VERSION}");
-        let width = Terminal::size()?.width as usize;
-        let len = welcome_message.len();
-        let padding = (width - len) / 2;
-        let spaces = " ".repeat(padding - 1);
-        welcome_message = format!("~{spaces}{welcome_message}");
-        welcome_message.truncate(width);
-        Terminal::print(welcome_message)
-    }
-
-    fn draw_empty_row() -> Result<(), Error> {
-        Terminal::print("~")
     }
 }

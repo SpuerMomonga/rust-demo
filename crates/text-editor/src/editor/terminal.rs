@@ -1,7 +1,4 @@
-use std::{
-    fmt::Display,
-    io::{stdout, Error, Write},
-};
+use std::io::{stdout, Error, Write};
 
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
@@ -11,14 +8,14 @@ use crossterm::{
     Command,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct Size {
-    pub height: u16,
-    pub width: u16,
+    pub height: usize,
+    pub width: usize,
 }
 
 impl Size {
-    pub fn new(height: u16, width: u16) -> Self {
+    pub fn new(height: usize, width: usize) -> Self {
         Self { height, width }
     }
 }
@@ -69,13 +66,13 @@ impl Terminal {
         Self::queue_command(Show)
     }
 
-    pub fn print<T: Display>(string: T) -> Result<(), Error> {
+    pub fn print(string: &str) -> Result<(), Error> {
         Self::queue_command(Print(string))
     }
 
     pub fn size() -> Result<Size, Error> {
         let (width, height) = terminal::size()?;
-        Ok(Size::new(height, width))
+        Ok(Size::new(height as usize, width as usize))
     }
 
     pub fn execute() -> Result<(), Error> {
