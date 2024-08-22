@@ -30,6 +30,13 @@ impl Position {
     pub fn new(col: usize, row: usize) -> Self {
         Self { col, row }
     }
+
+    pub const fn saturating_sub(self, other: Self) -> Self {
+        Self {
+            col: self.col.saturating_sub(other.col),
+            row: self.row.saturating_sub(other.row),
+        }
+    }
 }
 
 pub struct Terminal {}
