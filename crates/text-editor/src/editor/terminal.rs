@@ -15,7 +15,7 @@ pub struct Size {
 }
 
 impl Size {
-    pub fn new(height: usize, width: usize) -> Self {
+    pub fn from(height: usize, width: usize) -> Self {
         Self { height, width }
     }
 }
@@ -96,7 +96,7 @@ impl Terminal {
 
     pub fn size() -> Result<Size, Error> {
         let (width, height) = terminal::size()?;
-        Ok(Size::new(height as usize, width as usize))
+        Ok(Size::from(height as usize, width as usize))
     }
 
     pub fn execute() -> Result<(), Error> {
