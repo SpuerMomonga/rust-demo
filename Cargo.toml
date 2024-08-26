@@ -5,6 +5,7 @@ members = [
   "crates/child-process",
   "crates/host-process",
   "crates/text-editor",
+  "crates/shm",
 ]
 resolver = "2"
 

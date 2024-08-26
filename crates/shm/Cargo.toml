@@ -1,0 +1,8 @@
+[package]
+name = "shm"
+version = "0.0.0"
+authors = ["SpuerMomonga"]
+edition = "2021"
+
+[dependencies]
+windows = { version = "0.58", features = [] }
